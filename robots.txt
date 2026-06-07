@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://zombietralala38-dev.github.io/zipnest/sitemap.xml
+
