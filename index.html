@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZipNest - Fast Online ZIP Creator</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Inter,Segoe UI,sans-serif;
+}
+
+body{
+    background:#f5f7fb;
+    color:#1a1a1a;
+}
+
+.container{
+    max-width:900px;
+    margin:auto;
+    padding:40px 20px;
+}
+
+header{
+    text-align:center;
+    margin-bottom:40px;
+}
+
+header h1{
+    font-size:3rem;
+    margin-bottom:10px;
+}
+
+header p{
+    color:#666;
+    font-size:1.1rem;
+}
+
+.upload-box{
+    background:white;
+    border-radius:20px;
+    padding:40px;
+    box-shadow:0 10px 30px rgba(0,0,0,.08);
+}
+
+.main-upload{
+    border:3px dashed #d7dce8;
+    border-radius:16px;
+    padding:50px;
+    text-align:center;
+    cursor:pointer;
+    transition:.3s;
+}
+
+.main-upload:hover{
+    border-color:#4f46e5;
+}
+
+.plus-text{
+    font-size:4rem;
+    color:#4f46e5;
+    font-weight:bold;
+}
+
+.main-upload h2{
+    margin-top:10px;
+    font-size:1.4rem;
+}
+
+.file-list{
+    margin-top:25px;
+}
+
+.file-item{
+    background:#f8f9fc;
+    padding:12px 16px;
+    border-radius:12px;
+    margin-bottom:10px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.add-more{
+    width:70px;
+    height:70px;
+    border-radius:50%;
+    border:none;
+    background:#4f46e5;
+    color:white;
+    font-size:2rem;
+    cursor:pointer;
+    margin:25px auto;
+    display:block;
+    transition:.3s;
+}
+
+.add-more:hover{
+    transform:scale(1.08);
+}
+
+.download-btn{
+    width:100%;
+    padding:18px;
+    border:none;
+    border-radius:14px;
+    background:#4f46e5;
+    color:white;
+    font-size:1.1rem;
+    cursor:pointer;
+    transition:.3s;
+}
+
+.download-btn:hover{
+    background:#4338ca;
+}
+
+.info{
+    margin-top:50px;
+    background:white;
+    border-radius:20px;
+    padding:35px;
+    box-shadow:0 10px 30px rgba(0,0,0,.08);
+}
+
+.info h2{
+    margin-bottom:15px;
+}
+
+.info p{
+    color:#555;
+    line-height:1.8;
+    margin-bottom:15px;
+}
+
+.features{
+    margin-top:20px;
+}
+
+.features li{
+    margin-bottom:10px;
+    margin-left:20px;
+}
+
+footer{
+    text-align:center;
+    margin-top:40px;
+    color:#777;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<header>
+    <h1>ZipNest</h1>
+    <p>Create ZIP archives instantly in your browser.</p>
+</header>
+
+<div class="upload-box">
+
+    <label class="main-upload" for="fileInput">
+        <div class="plus-text">+</div>
+        <h2>Upload a File</h2>
+    </label>
+
+    <input type="file" id="fileInput" multiple hidden>
+
+    <div class="file-list" id="fileList"></div>
+
+    <button class="add-more" id="addMore">+</button>
+
+    <input type="file" id="extraInput" multiple hidden>
+
+    <button class="download-btn" id="zipButton">
+        Download ZIP File
+    </button>
+
+</div>
+
+<div class="info">
+    <h2>What is ZipNest?</h2>
+
+    <p>
+        ZipNest is a simple online tool that allows you to combine multiple
+        files into a single ZIP archive directly from your browser. No software
+        installation is required.
+    </p>
+
+    <p>
+        Whether you're organizing documents, sharing project files, or reducing
+        upload clutter, ZipNest helps you package everything into one convenient
+        download.
+    </p>
+
+    <h2>Why Use ZipNest?</h2>
+
+    <ul class="features">
+        <li>Fast ZIP generation</li>
+        <li>No registration required</li>
+        <li>Works directly in your browser</li>
+        <li>Easy drag-and-select workflow</li>
+        <li>Multiple file support</li>
+        <li>Privacy friendly processing</li>
+    </ul>
+
+    <h2>How It Works</h2>
+
+    <p>
+        Upload one or more files, click the ZIP button, and ZipNest will
+        automatically create a compressed archive ready for download.
+        Everything is processed locally in your browser for speed and privacy.
+    </p>
+</div>
+
+<footer>
+    © 2026 ZipNest. Fast, simple and secure ZIP creation.
+</footer>
+
+</div>
+
+<script>
+const fileInput = document.getElementById("fileInput");
+const extraInput = document.getElementById("extraInput");
+const fileList = document.getElementById("fileList");
+const zipButton = document.getElementById("zipButton");
+
+let selectedFiles = [];
+
+function renderFiles() {
+    fileList.innerHTML = "";
+
+    selectedFiles.forEach(file => {
+        const div = document.createElement("div");
+        div.className = "file-item";
+        div.innerHTML = `
+            <span>${file.name}</span>
+            <span>${(file.size/1024).toFixed(1)} KB</span>
+        `;
+        fileList.appendChild(div);
+    });
+}
+
+fileInput.addEventListener("change", (e) => {
+    selectedFiles.push(...e.target.files);
+    renderFiles();
+});
+
+extraInput.addEventListener("change", (e) => {
+    selectedFiles.push(...e.target.files);
+    renderFiles();
+});
+
+document.getElementById("addMore").addEventListener("click", () => {
+    extraInput.click();
+});
+
+zipButton.addEventListener("click", async () => {
+
+    if(selectedFiles.length === 0){
+        alert("Please upload at least one file.");
+        return;
+    }
+
+    const zip = new JSZip();
+
+    selectedFiles.forEach(file => {
+        zip.file(file.name, file);
+    });
+
+    const content = await zip.generateAsync({
+        type:"blob"
+    });
+
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(content);
+    a.download = "ZipNest-Archive.zip";
+    a.click();
+});
+</script>
+
+</body>
+  </html>
