@@ -1,714 +1,289 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>ZipNest Suite - Creador, Extractor y Optimizador de Archivos</title>
-    <!-- JSZip para manipulación completa de ZIP -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <!-- FileSaver.js opcional, pero usaremos Blob + URL nativo -->
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZipNest - Fast Online ZIP Creator</title>
 
-        body {
-            background: #f0f2f8;
-            color: #111827;
-            padding: 30px 20px;
-        }
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
-        .container {
-            max-width: 1300px;
-            margin: 0 auto;
-        }
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Inter,Segoe UI,sans-serif;
+}
 
-        /* Header */
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .header h1 {
-            font-size: 2.7rem;
-            background: linear-gradient(135deg, #1e1e2f, #4f46e5);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            letter-spacing: -0.5px;
-        }
-        .header p {
-            color: #4b5563;
-            margin-top: 8px;
-            font-size: 1.1rem;
-        }
+body{
+    background:#f5f7fb;
+    color:#1a1a1a;
+}
 
-        /* Pestañas */
-        .tabs {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin-bottom: 30px;
-            border-bottom: 1px solid #e2e8f0;
-            padding-bottom: 8px;
-        }
-        .tab-btn {
-            background: transparent;
-            border: none;
-            padding: 12px 28px;
-            font-size: 1rem;
-            font-weight: 600;
-            border-radius: 40px;
-            cursor: pointer;
-            transition: 0.2s;
-            color: #4b5563;
-        }
-        .tab-btn.active {
-            background: #4f46e5;
-            color: white;
-            box-shadow: 0 4px 10px rgba(79,70,229,0.3);
-        }
-        .tab-btn:not(.active):hover {
-            background: #e2e8f0;
-        }
-        .tab-pane {
-            display: none;
-            background: white;
-            border-radius: 32px;
-            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.1);
-            padding: 28px 30px;
-            margin-bottom: 30px;
-        }
-        .tab-pane.active {
-            display: block;
-            animation: fade 0.25s ease;
-        }
-        @keyframes fade {
-            from { opacity: 0; transform: translateY(6px);}
-            to { opacity: 1; transform: translateY(0);}
-        }
+.container{
+    max-width:900px;
+    margin:auto;
+    padding:40px 20px;
+}
 
-        /* Elementos comunes */
-        .dropzone {
-            border: 3px dashed #cbd5e1;
-            border-radius: 28px;
-            padding: 40px 20px;
-            text-align: center;
-            background: #fafcff;
-            transition: 0.2s;
-            cursor: pointer;
-            margin-bottom: 25px;
-        }
-        .dropzone.drag-over {
-            border-color: #4f46e5;
-            background: #f0f2ff;
-        }
-        .dropzone-icon {
-            font-size: 3.2rem;
-            margin-bottom: 8px;
-        }
-        .file-list {
-            margin: 20px 0;
-            max-height: 340px;
-            overflow-y: auto;
-            border-radius: 20px;
-            background: #f9fafb;
-            padding: 8px;
-        }
-        .file-card {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: white;
-            padding: 10px 16px;
-            margin: 8px 0;
-            border-radius: 18px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-            border: 1px solid #edf2f7;
-        }
-        .file-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            flex-wrap: wrap;
-            flex: 2;
-        }
-        .file-name {
-            font-weight: 500;
-            word-break: break-word;
-        }
-        .file-name input {
-            border: 1px solid #cbd5e1;
-            border-radius: 12px;
-            padding: 5px 10px;
-            font-size: 0.85rem;
-            width: auto;
-        }
-        .file-size {
-            color: #6c757d;
-            font-size: 0.75rem;
-            background: #eef2ff;
-            padding: 4px 8px;
-            border-radius: 20px;
-        }
-        .file-actions {
-            display: flex;
-            gap: 10px;
-        }
-        .btn-icon {
-            background: transparent;
-            border: none;
-            font-size: 1.3rem;
-            cursor: pointer;
-            padding: 5px;
-            border-radius: 40px;
-            transition: 0.1s;
-        }
-        .btn-icon.delete-btn {
-            color: #dc2626;
-        }
-        .btn-icon.edit-btn {
-            color: #4f46e5;
-        }
-        .btn-icon:hover {
-            background: #eef2ff;
-        }
-        .slider-compress {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            margin: 20px 0;
-            background: #f8fafc;
-            padding: 12px 20px;
-            border-radius: 60px;
-        }
-        button.primary-btn {
-            background: #4f46e5;
-            color: white;
-            border: none;
-            padding: 14px 24px;
-            font-size: 1rem;
-            font-weight: 600;
-            border-radius: 60px;
-            cursor: pointer;
-            width: 100%;
-            transition: 0.2s;
-            margin-top: 10px;
-        }
-        button.primary-btn:hover {
-            background: #4338ca;
-            transform: scale(1.01);
-        }
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: #e2e8f0;
-            border-radius: 10px;
-            margin: 18px 0;
-            overflow: hidden;
-        }
-        .progress-fill {
-            width: 0%;
-            height: 100%;
-            background: #4f46e5;
-            transition: width 0.2s;
-        }
-        .badge {
-            background: #e6f0ff;
-            border-radius: 40px;
-            padding: 6px 14px;
-            font-size: 0.8rem;
-        }
-        .grid-2col {
-            display: flex;
-            gap: 24px;
-            flex-wrap: wrap;
-        }
-        .preview-img {
-            max-width: 60px;
-            max-height: 60px;
-            border-radius: 12px;
-            object-fit: cover;
-        }
-        footer {
-            text-align: center;
-            margin-top: 30px;
-            font-size: 0.8rem;
-            color: #6c757d;
-        }
-        @media (max-width: 680px) {
-            .tab-btn { padding: 8px 16px; font-size: 0.85rem;}
-            .tab-pane { padding: 20px; }
-        }
-    </style>
+header{
+    text-align:center;
+    margin-bottom:40px;
+}
+
+header h1{
+    font-size:3rem;
+    margin-bottom:10px;
+}
+
+header p{
+    color:#666;
+    font-size:1.1rem;
+}
+
+.upload-box{
+    background:white;
+    border-radius:20px;
+    padding:40px;
+    box-shadow:0 10px 30px rgba(0,0,0,.08);
+}
+
+.main-upload{
+    border:3px dashed #d7dce8;
+    border-radius:16px;
+    padding:50px;
+    text-align:center;
+    cursor:pointer;
+    transition:.3s;
+}
+
+.main-upload:hover{
+    border-color:#4f46e5;
+}
+
+.plus-text{
+    font-size:4rem;
+    color:#4f46e5;
+    font-weight:bold;
+}
+
+.main-upload h2{
+    margin-top:10px;
+    font-size:1.4rem;
+}
+
+.file-list{
+    margin-top:25px;
+}
+
+.file-item{
+    background:#f8f9fc;
+    padding:12px 16px;
+    border-radius:12px;
+    margin-bottom:10px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.add-more{
+    width:70px;
+    height:70px;
+    border-radius:50%;
+    border:none;
+    background:#4f46e5;
+    color:white;
+    font-size:2rem;
+    cursor:pointer;
+    margin:25px auto;
+    display:block;
+    transition:.3s;
+}
+
+.add-more:hover{
+    transform:scale(1.08);
+}
+
+.download-btn{
+    width:100%;
+    padding:18px;
+    border:none;
+    border-radius:14px;
+    background:#4f46e5;
+    color:white;
+    font-size:1.1rem;
+    cursor:pointer;
+    transition:.3s;
+}
+
+.download-btn:hover{
+    background:#4338ca;
+}
+
+.info{
+    margin-top:50px;
+    background:white;
+    border-radius:20px;
+    padding:35px;
+    box-shadow:0 10px 30px rgba(0,0,0,.08);
+}
+
+.info h2{
+    margin-bottom:15px;
+}
+
+.info p{
+    color:#555;
+    line-height:1.8;
+    margin-bottom:15px;
+}
+
+.features{
+    margin-top:20px;
+}
+
+.features li{
+    margin-bottom:10px;
+    margin-left:20px;
+}
+
+footer{
+    text-align:center;
+    margin-top:40px;
+    color:#777;
+}
+</style>
 </head>
 <body>
+
 <div class="container">
-    <div class="header">
-        <h1>🗜️ ZipNest Suite</h1>
-        <p>Todo en uno: Creador ZIP, Extractor, Optimizador de imágenes + edición de archivos</p>
-    </div>
 
-    <div class="tabs">
-        <button class="tab-btn active" data-tab="creator">📦 Crear ZIP (avanzado)</button>
-        <button class="tab-btn" data-tab="extractor">🔓 Extraer ZIP</button>
-        <button class="tab-btn" data-tab="imageTool">🖼️ Optimizador de Imágenes</button>
-    </div>
+<header>
+    <h1>ZipNest</h1>
+    <p>Create ZIP archives instantly in your browser.</p>
+</header>
 
-    <!-- ========================= PANEL CREACIÓN ZIP ========================= -->
-    <div id="creatorPane" class="tab-pane active">
-        <h3 style="margin-bottom: 6px;">✨ Crea ZIP con control total</h3>
-        <p style="margin-bottom: 20px; color:#4b5563;">Arrastra archivos, edita nombres, elimina, ajusta compresión.</p>
-        
-        <div id="dropzoneCreator" class="dropzone">
-            <div class="dropzone-icon">📂➕</div>
-            <div>Arrastra archivos aquí o haz clic para seleccionar</div>
-            <input type="file" id="creatorFileInput" multiple hidden>
-        </div>
+<div class="upload-box">
 
-        <div class="slider-compress">
-            <span>🗜️ Nivel de compresión:</span>
-            <input type="range" id="compressLevel" min="0" max="9" value="6" step="1">
-            <span id="levelValue" class="badge">6 (Normal)</span>
-        </div>
+    <label class="main-upload" for="fileInput">
+        <div class="plus-text">+</div>
+        <h2>Upload a File</h2>
+    </label>
 
-        <div id="creatorFileList" class="file-list"></div>
-        
-        <div style="display: flex; gap: 12px; margin-bottom: 15px;">
-            <button id="clearAllFilesBtn" class="btn-icon" style="background:#fee2e2; padding:8px 16px; border-radius: 40px;">🗑️ Limpiar todo</button>
-            <label style="background:#eef2ff; padding:8px 18px; border-radius:40px; cursor:pointer;">➕ Añadir más archivos
-                <input type="file" id="addExtraCreatorInput" multiple hidden>
-            </label>
-        </div>
+    <input type="file" id="fileInput" multiple hidden>
 
-        <div class="progress-bar" id="zipProgressBar"><div class="progress-fill" id="zipProgressFill"></div></div>
-        <button id="generateZipBtn" class="primary-btn">⚡ Generar y descargar ZIP</button>
-        <p style="font-size: 0.75rem; margin-top: 12px; text-align:center;">✅ Todo es procesado localmente, máxima privacidad</p>
-    </div>
+    <div class="file-list" id="fileList"></div>
 
-    <!-- ========================= PANEL EXTRACTOR ZIP ========================= -->
-    <div id="extractorPane" class="tab-pane">
-        <h3>📂 Extraer archivos desde ZIP</h3>
-        <p style="margin-bottom: 15px;">Sube un archivo .zip, visualiza su contenido y descarga elementos individuales o todos juntos.</p>
-        <div id="dropzoneExtractor" class="dropzone">
-            <div class="dropzone-icon">🗄️</div>
-            <div>Sube tu archivo ZIP aquí</div>
-            <input type="file" id="extractorZipInput" accept=".zip" hidden>
-        </div>
-        <div id="extractContentArea" style="margin-top: 20px;"></div>
-        <button id="downloadAllExtractedBtn" class="primary-btn" style="background: #2b6e4f;">📥 Descargar todos los archivos (como nuevo ZIP)</button>
-    </div>
+    <button class="add-more" id="addMore">+</button>
 
-    <!-- ========================= PANEL OPTIMIZADOR DE IMÁGENES ========================= -->
-    <div id="imageToolPane" class="tab-pane">
-        <h3>🖼️ Optimizador/Redimensionador de imágenes</h3>
-        <p>Sube imágenes (JPG/PNG), ajusta calidad/tamaño y luego genera un ZIP con las imágenes optimizadas.</p>
-        <div id="dropzoneImage" class="dropzone">
-            <div class="dropzone-icon">🖼️➕</div>
-            <div>Arrastra imágenes (jpg, png, webp)</div>
-            <input type="file" id="imageFileInput" accept="image/jpeg,image/png,image/webp" multiple hidden>
-        </div>
-        <div style="display: flex; gap: 20px; flex-wrap: wrap; margin: 15px 0;">
-            <label>Calidad JPEG/WebP: <input type="range" id="imgQuality" min="0.1" max="1" step="0.01" value="0.85"></label>
-            <span id="qualityVal" class="badge">85%</span>
-            <label>Redimensionar (ancho máx, px): <input type="number" id="maxWidth" value="1200" style="width:90px;"> (0 = original)</label>
-        </div>
-        <div id="imagePreviewList" class="file-list" style="max-height: 280px;"></div>
-        <button id="optimizeAndZipBtn" class="primary-btn">⚡ Optimizar imágenes y crear ZIP</button>
-    </div>
+    <input type="file" id="extraInput" multiple hidden>
 
-    <footer>ZipNest Suite • Herramientas completas sin servidor • Procesamiento 100% local</footer>
+    <button class="download-btn" id="zipButton">
+        Download ZIP File
+    </button>
+
+</div>
+
+<div class="info">
+    <h2>What is ZipNest?</h2>
+
+    <p>
+        ZipNest is a simple online tool that allows you to combine multiple
+        files into a single ZIP archive directly from your browser. No software
+        installation is required.
+    </p>
+
+    <p>
+        Whether you're organizing documents, sharing project files, or reducing
+        upload clutter, ZipNest helps you package everything into one convenient
+        download.
+    </p>
+
+    <h2>Why Use ZipNest?</h2>
+
+    <ul class="features">
+        <li>Fast ZIP generation</li>
+        <li>No registration required</li>
+        <li>Works directly in your browser</li>
+        <li>Easy drag-and-select workflow</li>
+        <li>Multiple file support</li>
+        <li>Privacy friendly processing</li>
+    </ul>
+
+    <h2>How It Works</h2>
+
+    <p>
+        Upload one or more files, click the ZIP button, and ZipNest will
+        automatically create a compressed archive ready for download.
+        Everything is processed locally in your browser for speed and privacy.
+    </p>
+</div>
+
+<footer>
+    © 2026 ZipNest. Fast, simple and secure ZIP creation.
+</footer>
+
 </div>
 
 <script>
-    // ---------- GLOBAL VARIABLES ----------
-    // Para creador
-    let creatorFiles = []; // array de objetos {file, customName?}
-    // Para extractor
-    let currentExtractedZipData = null; // guardar objeto JSZip
-    let extractedFileMap = []; // {name, blob, size}
-    // Para optimizador
-    let pendingImages = []; // archivos originales
+const fileInput = document.getElementById("fileInput");
+const extraInput = document.getElementById("extraInput");
+const fileList = document.getElementById("fileList");
+const zipButton = document.getElementById("zipButton");
 
-    // Helper: formatear tamaño
-    function formatSize(bytes) {
-        if(bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-    }
+let selectedFiles = [];
 
-    // ---------- RENDER CREADOR (lista con edición y eliminación) ----------
-    function renderCreatorList() {
-        const container = document.getElementById('creatorFileList');
-        if(!container) return;
-        if(creatorFiles.length === 0){
-            container.innerHTML = '<div style="padding:20px; text-align:center; color:#aaa;">No hay archivos agregados aún</div>';
-            return;
-        }
-        container.innerHTML = '';
-        creatorFiles.forEach((item, idx) => {
-            const file = item.file;
-            const displayName = item.customName || file.name;
-            const card = document.createElement('div');
-            card.className = 'file-card';
-            card.innerHTML = `
-                <div class="file-info">
-                    <span class="file-name" id="nameSpan-${idx}">${escapeHtml(displayName)}</span>
-                    <span class="file-size">${formatSize(file.size)}</span>
-                </div>
-                <div class="file-actions">
-                    <button class="btn-icon edit-btn" data-idx="${idx}" title="Renombrar dentro del ZIP">✏️</button>
-                    <button class="btn-icon delete-btn" data-idx="${idx}" title="Eliminar">❌</button>
-                </div>
-            `;
-            container.appendChild(card);
-        });
+function renderFiles() {
+    fileList.innerHTML = "";
 
-        // eventos editar y eliminar
-        document.querySelectorAll('.edit-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const idx = parseInt(btn.getAttribute('data-idx'));
-                const currentName = creatorFiles[idx].customName || creatorFiles[idx].file.name;
-                const newName = prompt('Nuevo nombre dentro del ZIP:', currentName);
-                if(newName && newName.trim() !== '') {
-                    creatorFiles[idx].customName = newName.trim();
-                    renderCreatorList();
-                }
-            });
-        });
-        document.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const idx = parseInt(btn.getAttribute('data-idx'));
-                creatorFiles.splice(idx, 1);
-                renderCreatorList();
-            });
-        });
-    }
-
-    function escapeHtml(str) {
-        return str.replace(/[&<>]/g, function(m) {
-            if(m === '&') return '&amp;';
-            if(m === '<') return '&lt;';
-            if(m === '>') return '&gt;';
-            return m;
-        });
-    }
-
-    // Agregar archivos al creador
-    function addFilesToCreator(fileList) {
-        for(let file of fileList) {
-            creatorFiles.push({ file: file, customName: null });
-        }
-        renderCreatorList();
-    }
-
-    // Drag & Drop común
-    function setupDropzone(elementId, onFiles, acceptAttr = false) {
-        const dropzone = document.getElementById(elementId);
-        const fileInput = dropzone.querySelector('input[type="file"]');
-        dropzone.addEventListener('click', (e) => {
-            if(e.target === dropzone || dropzone.contains(e.target) && fileInput) fileInput.click();
-        });
-        dropzone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropzone.classList.add('drag-over');
-        });
-        dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
-        dropzone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropzone.classList.remove('drag-over');
-            if(e.dataTransfer.files.length) onFiles(e.dataTransfer.files);
-        });
-        if(fileInput) {
-            fileInput.addEventListener('change', (e) => {
-                if(e.target.files.length) onFiles(e.target.files);
-                fileInput.value = '';
-            });
-        }
-    }
-
-    // ----- Inicialización del CREADOR -----
-    const creatorDropzone = document.getElementById('dropzoneCreator');
-    const creatorHiddenInput = document.getElementById('creatorFileInput');
-    setupDropzone('dropzoneCreator', (files) => { addFilesToCreator(files); });
-    document.getElementById('addExtraCreatorInput')?.addEventListener('change', (e) => {
-        if(e.target.files) addFilesToCreator(e.target.files);
-        e.target.value = '';
+    selectedFiles.forEach(file => {
+        const div = document.createElement("div");
+        div.className = "file-item";
+        div.innerHTML = `
+            <span>${file.name}</span>
+            <span>${(file.size/1024).toFixed(1)} KB</span>
+        `;
+        fileList.appendChild(div);
     });
-    document.getElementById('clearAllFilesBtn')?.addEventListener('click', () => {
-        creatorFiles = [];
-        renderCreatorList();
+}
+
+fileInput.addEventListener("change", (e) => {
+    selectedFiles.push(...e.target.files);
+    renderFiles();
+});
+
+extraInput.addEventListener("change", (e) => {
+    selectedFiles.push(...e.target.files);
+    renderFiles();
+});
+
+document.getElementById("addMore").addEventListener("click", () => {
+    extraInput.click();
+});
+
+zipButton.addEventListener("click", async () => {
+
+    if(selectedFiles.length === 0){
+        alert("Please upload at least one file.");
+        return;
+    }
+
+    const zip = new JSZip();
+
+    selectedFiles.forEach(file => {
+        zip.file(file.name, file);
     });
 
-    // nivel compresión slider
-    const levelSlider = document.getElementById('compressLevel');
-    const levelSpan = document.getElementById('levelValue');
-    if(levelSlider) {
-        levelSlider.addEventListener('input', () => {
-            levelSpan.innerText = levelSlider.value + (levelSlider.value == 0 ? ' (Sin compresión)' : ' (Máx DEFLATE)');
-        });
-    }
-
-    // Generar ZIP con progreso
-    document.getElementById('generateZipBtn')?.addEventListener('click', async () => {
-        if(creatorFiles.length === 0) { alert('Agrega al menos un archivo para crear el ZIP'); return; }
-        const zip = new JSZip();
-        const compressionLevel = parseInt(levelSlider.value);
-        for(let item of creatorFiles) {
-            const finalName = item.customName ? item.customName : item.file.name;
-            zip.file(finalName, item.file, { compression: compressionLevel > 0 ? 'DEFLATE' : 'STORE', compressionOptions: { level: compressionLevel } });
-        }
-        const progressFill = document.getElementById('zipProgressFill');
-        progressFill.style.width = '0%';
-        const blob = await zip.generateAsync({ type: "blob", compression: compressionLevel > 0 ? "DEFLATE" : "STORE", compressionOptions: { level: compressionLevel } },
-            (metadata) => {
-                let percent = (metadata.percent).toFixed(0);
-                progressFill.style.width = percent + '%';
-            }
-        );
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = `ZipNest_${new Date().toISOString().slice(0,19)}.zip`;
-        link.click();
-        URL.revokeObjectURL(link.href);
-        setTimeout(() => { progressFill.style.width = '0%'; }, 500);
+    const content = await zip.generateAsync({
+        type:"blob"
     });
 
-    // ---------- EXTRACTOR ZIP ----------
-    let currentZipObject = null;
-    async function handleZipUpload(file) {
-        if(!file || file.type !== 'application/zip' && !file.name.endsWith('.zip')) {
-            alert('Por favor selecciona un archivo ZIP válido');
-            return;
-        }
-        try {
-            const arrayBuffer = await file.arrayBuffer();
-            const zip = await JSZip.loadAsync(arrayBuffer);
-            currentZipObject = zip;
-            const fileEntries = [];
-            const promises = [];
-            zip.forEach((relativePath, zipEntry) => {
-                if(!zipEntry.dir) {
-                    promises.push(zipEntry.async('blob').then(blob => {
-                        fileEntries.push({ name: relativePath, blob: blob, size: blob.size });
-                    }));
-                }
-            });
-            await Promise.all(promises);
-            extractedFileMap = fileEntries;
-            renderExtractedList(fileEntries);
-        } catch(e) {
-            console.error(e);
-            alert('Error al leer el archivo ZIP, puede estar corrupto o tener formato no soportado.');
-        }
-    }
-
-    function renderExtractedList(files) {
-        const area = document.getElementById('extractContentArea');
-        if(!area) return;
-        if(files.length === 0) { area.innerHTML = '<div class="badge">ZIP vacío o sin archivos detectados</div>'; return; }
-        let html = `<div style="margin-bottom: 12px;"><strong>📄 Contenido (${files.length} archivos)</strong></div><div class="file-list">`;
-        files.forEach((file, idx) => {
-            html += `
-                <div class="file-card">
-                    <span>📁 ${escapeHtml(file.name)}</span>
-                    <span class="file-size">${formatSize(file.size)}</span>
-                    <button class="btn-icon download-single" data-idx="${idx}" style="background:#eef2ff;">⬇️</button>
-                </div>
-            `;
-        });
-        html += `</div>`;
-        area.innerHTML = html;
-        document.querySelectorAll('.download-single').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const idx = parseInt(btn.getAttribute('data-idx'));
-                const item = extractedFileMap[idx];
-                if(item) {
-                    const url = URL.createObjectURL(item.blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = item.name.split('/').pop();
-                    a.click();
-                    URL.revokeObjectURL(url);
-                }
-            });
-        });
-    }
-
-    setupDropzone('dropzoneExtractor', (files) => {
-        if(files.length) handleZipUpload(files[0]);
-    });
-    document.getElementById('downloadAllExtractedBtn')?.addEventListener('click', async () => {
-        if(!currentZipObject || extractedFileMap.length === 0) { alert('No hay ZIP cargado o está vacío'); return; }
-        const newZip = new JSZip();
-        for(let item of extractedFileMap) {
-            newZip.file(item.name, item.blob);
-        }
-        const blob = await newZip.generateAsync({ type: "blob" });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = 'extraidos_completos.zip';
-        link.click();
-        URL.revokeObjectURL(link.href);
-    });
-
-    // ---------- OPTIMIZADOR DE IMÁGENES ----------
-    let optimizedBlobsMap = []; // para vista previa temporal
-    function renderImagePreviewList(imagesArray) {
-        const container = document.getElementById('imagePreviewList');
-        if(!container) return;
-        if(imagesArray.length === 0) {
-            container.innerHTML = '<div style="text-align:center; padding:20px;">No hay imágenes cargadas</div>';
-            return;
-        }
-        container.innerHTML = '';
-        imagesArray.forEach((imgItem, idx) => {
-            const div = document.createElement('div');
-            div.className = 'file-card';
-            div.innerHTML = `
-                <div style="display:flex; gap:10px; align-items:center;">
-                    <img class="preview-img" src="${imgItem.previewUrl || ''}" alt="preview" style="width:50px;height:50px;object-fit:cover;">
-                    <span><strong>${escapeHtml(imgItem.originalName)}</strong><br><span style="font-size:11px;">${formatSize(imgItem.originalSize)}</span></span>
-                </div>
-                <button class="btn-icon delete-img" data-idx="${idx}">🗑️</button>
-            `;
-            container.appendChild(div);
-        });
-        document.querySelectorAll('.delete-img').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const idx = parseInt(btn.getAttribute('data-idx'));
-                if(pendingImages[idx] && pendingImages[idx].previewUrl) URL.revokeObjectURL(pendingImages[idx].previewUrl);
-                pendingImages.splice(idx, 1);
-                renderImagePreviewList(pendingImages);
-            });
-        });
-    }
-
-    async function optimizeImage(file, quality, maxWidth) {
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            const objectUrl = URL.createObjectURL(file);
-            img.onload = () => {
-                let width = img.width;
-                let height = img.height;
-                if(maxWidth > 0 && width > maxWidth) {
-                    const ratio = maxWidth / width;
-                    width = maxWidth;
-                    height = height * ratio;
-                }
-                const canvas = document.createElement('canvas');
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
-                let mime = file.type;
-                if(mime === 'image/jpeg' || mime === 'image/jpg') mime = 'image/jpeg';
-                else if(mime === 'image/png') mime = 'image/png';
-                else if(mime === 'image/webp') mime = 'image/webp';
-                else mime = 'image/jpeg';
-                canvas.toBlob((blob) => {
-                    URL.revokeObjectURL(objectUrl);
-                    resolve({ blob: blob, originalName: file.name, size: blob.size });
-                }, mime, parseFloat(quality));
-            };
-            img.onerror = () => {
-                URL.revokeObjectURL(objectUrl);
-                reject(new Error('No se pudo cargar la imagen'));
-            };
-            img.src = objectUrl;
-        });
-    }
-
-    setupDropzone('dropzoneImage', (files) => {
-        for(let file of files) {
-            if(file.type.startsWith('image/')) {
-                const previewUrl = URL.createObjectURL(file);
-                pendingImages.push({
-                    originalFile: file,
-                    originalName: file.name,
-                    originalSize: file.size,
-                    previewUrl: previewUrl,
-                });
-            } else {
-                alert(`"${file.name}" no es imagen soportada, se omite.`);
-            }
-        }
-        renderImagePreviewList(pendingImages);
-    });
-    document.getElementById('imageFileInput')?.addEventListener('change', (e) => {
-        if(e.target.files) {
-            for(let file of e.target.files) {
-                if(file.type.startsWith('image/')) {
-                    const previewUrl = URL.createObjectURL(file);
-                    pendingImages.push({ originalFile: file, originalName: file.name, originalSize: file.size, previewUrl });
-                }
-            }
-            renderImagePreviewList(pendingImages);
-        }
-        e.target.value = '';
-    });
-    const qualitySlider = document.getElementById('imgQuality');
-    const qualitySpan = document.getElementById('qualityVal');
-    if(qualitySlider){
-        qualitySlider.addEventListener('input', () => qualitySpan.innerText = Math.round(qualitySlider.value*100)+'%');
-    }
-    document.getElementById('optimizeAndZipBtn')?.addEventListener('click', async () => {
-        if(pendingImages.length === 0) { alert('Agrega imágenes para optimizar'); return; }
-        const quality = parseFloat(qualitySlider.value);
-        const maxWidth = parseInt(document.getElementById('maxWidth').value) || 0;
-        const zip = new JSZip();
-        let processed = 0;
-        for(let imgItem of pendingImages) {
-            try {
-                const optimized = await optimizeImage(imgItem.originalFile, quality, maxWidth);
-                let baseName = imgItem.originalName.replace(/\.[^/.]+$/, '');
-                let ext = '.jpg';
-                if(optimized.blob.type === 'image/png') ext = '.png';
-                else if(optimized.blob.type === 'image/webp') ext = '.webp';
-                else ext = '.jpg';
-                const newName = `${baseName}_optimized${ext}`;
-                zip.file(newName, optimized.blob);
-                processed++;
-            } catch(err) {
-                console.warn(`Error con ${imgItem.originalName}:`, err);
-                zip.file(imgItem.originalName, imgItem.originalFile);
-            }
-        }
-        if(processed === 0 && pendingImages.length) {
-            alert('No se pudo optimizar ninguna imagen, se empaquetarán originales.');
-        }
-        const finalBlob = await zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(finalBlob);
-        link.download = 'imagenes_optimizadas.zip';
-        link.click();
-        URL.revokeObjectURL(link.href);
-    });
-
-    // ----- CAMBIO DE PESTAÑAS -----
-    const tabs = document.querySelectorAll('.tab-btn');
-    const panes = { creator: document.getElementById('creatorPane'), extractor: document.getElementById('extractorPane'), imageTool: document.getElementById('imageToolPane') };
-    tabs.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const tabId = btn.getAttribute('data-tab');
-            tabs.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            Object.values(panes).forEach(pane => pane.classList.remove('active'));
-            if(tabId === 'creator') panes.creator.classList.add('active');
-            if(tabId === 'extractor') panes.extractor.classList.add('active');
-            if(tabId === 'imageTool') panes.imageTool.classList.add('active');
-        });
-    });
-    // limpiar URLs preview al salir? no necesario
-    window.addEventListener('beforeunload', () => {
-        for(let img of pendingImages) if(img.previewUrl) URL.revokeObjectURL(img.previewUrl);
-    });
-    // Inicializar render vacío para creador
-    renderCreatorList();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(content);
+    a.download = "ZipNest-Archive.zip";
+    a.click();
+});
 </script>
+
 </body>
-</html>
+  </html>
