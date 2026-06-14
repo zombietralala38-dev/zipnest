@@ -18,6 +18,12 @@
 body{
     background:#f5f7fb;
     color:#1a1a1a;
+    transition: background 0.3s, color 0.3s;
+}
+
+body.dark{
+    background:#0f172a;
+    color:#e2e8f0;
 }
 
 .container{
@@ -41,11 +47,21 @@ header p{
     font-size:1.1rem;
 }
 
+body.dark header p {
+    color: #94a3b8;
+}
+
 .upload-box{
     background:white;
     border-radius:20px;
     padding:40px;
     box-shadow:0 10px 30px rgba(0,0,0,.08);
+    transition: background 0.3s, box-shadow 0.3s;
+}
+
+body.dark .upload-box{
+    background:#1e2937;
+    box-shadow:0 10px 30px rgba(0,0,0,.3);
 }
 
 .main-upload{
@@ -55,6 +71,10 @@ header p{
     text-align:center;
     cursor:pointer;
     transition:.3s;
+}
+
+body.dark .main-upload{
+    border-color: #475569;
 }
 
 .main-upload:hover{
@@ -84,6 +104,11 @@ header p{
     display:flex;
     justify-content:space-between;
     align-items:center;
+    transition: background 0.3s;
+}
+
+body.dark .file-item{
+    background:#334155;
 }
 
 .add-more{
@@ -126,6 +151,11 @@ header p{
     border-radius:20px;
     padding:35px;
     box-shadow:0 10px 30px rgba(0,0,0,.08);
+    transition: background 0.3s;
+}
+
+body.dark .info{
+    background:#1e2937;
 }
 
 .info h2{
@@ -136,6 +166,10 @@ header p{
     color:#555;
     line-height:1.8;
     margin-bottom:15px;
+}
+
+body.dark .info p{
+    color:#cbd5e1;
 }
 
 .features{
@@ -152,9 +186,37 @@ footer{
     margin-top:40px;
     color:#777;
 }
+
+body.dark footer{
+    color:#94a3b8;
+}
+
+/* Dark Mode Toggle */
+.theme-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #4f46e5;
+    color: white;
+    border: none;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    font-size: 1.4rem;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    z-index: 1000;
+    transition: transform 0.3s;
+}
+
+.theme-toggle:hover {
+    transform: scale(1.1);
+}
 </style>
 </head>
 <body>
+
+<button class="theme-toggle" id="themeToggle">🌙</button>
 
 <div class="container">
 
@@ -208,6 +270,7 @@ footer{
         <li>Easy drag-and-select workflow</li>
         <li>Multiple file support</li>
         <li>Privacy friendly processing</li>
+        <li><strong>New:</strong> Dark Mode support</li>
     </ul>
 
     <h2>How It Works</h2>
@@ -230,8 +293,25 @@ const fileInput = document.getElementById("fileInput");
 const extraInput = document.getElementById("extraInput");
 const fileList = document.getElementById("fileList");
 const zipButton = document.getElementById("zipButton");
+const themeToggle = document.getElementById("themeToggle");
 
 let selectedFiles = [];
+
+// Dark Mode
+function toggleDarkMode() {
+    document.body.classList.toggle('dark');
+    const isDark = document.body.classList.contains('dark');
+    themeToggle.textContent = isDark ? '☀️' : '🌙';
+    localStorage.setItem('darkMode', isDark);
+}
+
+themeToggle.addEventListener('click', toggleDarkMode);
+
+// Load saved preference
+if (localStorage.getItem('darkMode') === 'true') {
+    document.body.classList.add('dark');
+    themeToggle.textContent = '☀️';
+}
 
 function renderFiles() {
     fileList.innerHTML = "";
