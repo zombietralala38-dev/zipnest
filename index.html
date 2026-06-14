@@ -523,4 +523,192 @@
         });
         html += `</div>`;
         area.innerHTML = html;
-        document.querySelectorAll('.download-single').forEach(bt
+        document.querySelectorAll('.download-single').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const idx = parseInt(btn.getAttribute('data-idx'));
+                const item = extractedFileMap[idx];
+                if(item) {
+                    const url = URL.createObjectURL(item.blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = item.name.split('/').pop();
+                    a.click();
+                    URL.revokeObjectURL(url);
+                }
+            });
+        });
+    }
+
+    setupDropzone('dropzoneExtractor', (files) => {
+        if(files.length) handleZipUpload(files[0]);
+    });
+    document.getElementById('downloadAllExtractedBtn')?.addEventListener('click', async () => {
+        if(!currentZipObject || extractedFileMap.length === 0) { alert('No hay ZIP cargado o está vacío'); return; }
+        const newZip = new JSZip();
+        for(let item of extractedFileMap) {
+            newZip.file(item.name, item.blob);
+        }
+        const blob = await newZip.generateAsync({ type: "blob" });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'extraidos_completos.zip';
+        link.click();
+        URL.revokeObjectURL(link.href);
+    });
+
+    // ---------- OPTIMIZADOR DE IMÁGENES ----------
+    let optimizedBlobsMap = []; // para vista previa temporal
+    function renderImagePreviewList(imagesArray) {
+        const container = document.getElementById('imagePreviewList');
+        if(!container) return;
+        if(imagesArray.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding:20px;">No hay imágenes cargadas</div>';
+            return;
+        }
+        container.innerHTML = '';
+        imagesArray.forEach((imgItem, idx) => {
+            const div = document.createElement('div');
+            div.className = 'file-card';
+            div.innerHTML = `
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <img class="preview-img" src="${imgItem.previewUrl || ''}" alt="preview" style="width:50px;height:50px;object-fit:cover;">
+                    <span><strong>${escapeHtml(imgItem.originalName)}</strong><br><span style="font-size:11px;">${formatSize(imgItem.originalSize)}</span></span>
+                </div>
+                <button class="btn-icon delete-img" data-idx="${idx}">🗑️</button>
+            `;
+            container.appendChild(div);
+        });
+        document.querySelectorAll('.delete-img').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const idx = parseInt(btn.getAttribute('data-idx'));
+                if(pendingImages[idx] && pendingImages[idx].previewUrl) URL.revokeObjectURL(pendingImages[idx].previewUrl);
+                pendingImages.splice(idx, 1);
+                renderImagePreviewList(pendingImages);
+            });
+        });
+    }
+
+    async function optimizeImage(file, quality, maxWidth) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            const objectUrl = URL.createObjectURL(file);
+            img.onload = () => {
+                let width = img.width;
+                let height = img.height;
+                if(maxWidth > 0 && width > maxWidth) {
+                    const ratio = maxWidth / width;
+                    width = maxWidth;
+                    height = height * ratio;
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                let mime = file.type;
+                if(mime === 'image/jpeg' || mime === 'image/jpg') mime = 'image/jpeg';
+                else if(mime === 'image/png') mime = 'image/png';
+                else if(mime === 'image/webp') mime = 'image/webp';
+                else mime = 'image/jpeg';
+                canvas.toBlob((blob) => {
+                    URL.revokeObjectURL(objectUrl);
+                    resolve({ blob: blob, originalName: file.name, size: blob.size });
+                }, mime, parseFloat(quality));
+            };
+            img.onerror = () => {
+                URL.revokeObjectURL(objectUrl);
+                reject(new Error('No se pudo cargar la imagen'));
+            };
+            img.src = objectUrl;
+        });
+    }
+
+    setupDropzone('dropzoneImage', (files) => {
+        for(let file of files) {
+            if(file.type.startsWith('image/')) {
+                const previewUrl = URL.createObjectURL(file);
+                pendingImages.push({
+                    originalFile: file,
+                    originalName: file.name,
+                    originalSize: file.size,
+                    previewUrl: previewUrl,
+                });
+            } else {
+                alert(`"${file.name}" no es imagen soportada, se omite.`);
+            }
+        }
+        renderImagePreviewList(pendingImages);
+    });
+    document.getElementById('imageFileInput')?.addEventListener('change', (e) => {
+        if(e.target.files) {
+            for(let file of e.target.files) {
+                if(file.type.startsWith('image/')) {
+                    const previewUrl = URL.createObjectURL(file);
+                    pendingImages.push({ originalFile: file, originalName: file.name, originalSize: file.size, previewUrl });
+                }
+            }
+            renderImagePreviewList(pendingImages);
+        }
+        e.target.value = '';
+    });
+    const qualitySlider = document.getElementById('imgQuality');
+    const qualitySpan = document.getElementById('qualityVal');
+    if(qualitySlider){
+        qualitySlider.addEventListener('input', () => qualitySpan.innerText = Math.round(qualitySlider.value*100)+'%');
+    }
+    document.getElementById('optimizeAndZipBtn')?.addEventListener('click', async () => {
+        if(pendingImages.length === 0) { alert('Agrega imágenes para optimizar'); return; }
+        const quality = parseFloat(qualitySlider.value);
+        const maxWidth = parseInt(document.getElementById('maxWidth').value) || 0;
+        const zip = new JSZip();
+        let processed = 0;
+        for(let imgItem of pendingImages) {
+            try {
+                const optimized = await optimizeImage(imgItem.originalFile, quality, maxWidth);
+                let baseName = imgItem.originalName.replace(/\.[^/.]+$/, '');
+                let ext = '.jpg';
+                if(optimized.blob.type === 'image/png') ext = '.png';
+                else if(optimized.blob.type === 'image/webp') ext = '.webp';
+                else ext = '.jpg';
+                const newName = `${baseName}_optimized${ext}`;
+                zip.file(newName, optimized.blob);
+                processed++;
+            } catch(err) {
+                console.warn(`Error con ${imgItem.originalName}:`, err);
+                zip.file(imgItem.originalName, imgItem.originalFile);
+            }
+        }
+        if(processed === 0 && pendingImages.length) {
+            alert('No se pudo optimizar ninguna imagen, se empaquetarán originales.');
+        }
+        const finalBlob = await zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(finalBlob);
+        link.download = 'imagenes_optimizadas.zip';
+        link.click();
+        URL.revokeObjectURL(link.href);
+    });
+
+    // ----- CAMBIO DE PESTAÑAS -----
+    const tabs = document.querySelectorAll('.tab-btn');
+    const panes = { creator: document.getElementById('creatorPane'), extractor: document.getElementById('extractorPane'), imageTool: document.getElementById('imageToolPane') };
+    tabs.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabId = btn.getAttribute('data-tab');
+            tabs.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            Object.values(panes).forEach(pane => pane.classList.remove('active'));
+            if(tabId === 'creator') panes.creator.classList.add('active');
+            if(tabId === 'extractor') panes.extractor.classList.add('active');
+            if(tabId === 'imageTool') panes.imageTool.classList.add('active');
+        });
+    });
+    // limpiar URLs preview al salir? no necesario
+    window.addEventListener('beforeunload', () => {
+        for(let img of pendingImages) if(img.previewUrl) URL.revokeObjectURL(img.previewUrl);
+    });
+    // Inicializar render vacío para creador
+    renderCreatorList();
+</script>
+</body>
+</html>
