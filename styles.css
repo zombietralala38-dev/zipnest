@@ -1,0 +1,69 @@
+/* styles.css - modularized from original and extended */
+:root{
+  --bg:#f5f7fb;
+  --card:#ffffff;
+  --muted:#666;
+  --primary:#4f46e5;
+  --shadow: 0 10px 30px rgba(0,0,0,.08);
+  --radius:12px;
+  --success:#16a34a;
+  --danger:#ef4444;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{font-family:Inter,Segoe UI,sans-serif;background:var(--bg);color:#111;margin:0}
+.container{max-width:980px;margin:24px auto;padding:20px}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.branding{display:flex;align-items:center;gap:16px}
+.logo{width:48px;height:48px;border-radius:8px}
+.tagline{color:var(--muted)}
+
+.upload-box{background:var(--card);padding:20px;border-radius:20px;box-shadow:var(--shadow)}
+.main-upload{border:3px dashed #d7dce8;border-radius:16px;padding:28px;text-align:center;cursor:pointer;transition:transform .18s, border-color .18s;outline:none}
+.main-upload:focus{box-shadow:0 0 0 3px rgba(79,70,229,0.12)}
+.main-upload.dragover{border-color:var(--primary);transform:translateY(-4px)}
+.plus-text{font-size:3rem;color:var(--primary);font-weight:700}
+.small{color:var(--muted);font-size:0.9rem}
+.uploader-actions{display:flex;gap:8px;margin-top:12px}
+.btn{background:var(--primary);color:white;border:none;padding:10px 12px;border-radius:10px;cursor:pointer}
+.btn-ghost{background:transparent;border:1px solid #e6e9f2;color:#333}
+.meta{display:flex;gap:16px;margin-top:12px;color:#333}
+.file-list{margin-top:16px}
+.file-item{display:flex;align-items:center;gap:12px;background:#f8f9fc;padding:10px;border-radius:12px;margin-bottom:8px}
+.file-meta{flex:1;min-width:0}
+.file-name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file-sub{font-size:0.85rem;color:var(--muted)}
+.file-actions{display:flex;gap:8px}
+.icon-btn{background:transparent;border:none;cursor:pointer;padding:6px;border-radius:8px}
+.icon-btn:hover{background:rgba(0,0,0,0.04)}
+.thumbnail{width:44px;height:44px;object-fit:cover;border-radius:6px}
+.zip-config{display:flex;gap:12px;align-items:center;margin-top:16px}
+.input{padding:8px;border-radius:8px;border:1px solid #e6e9f2}
+.download-btn{margin-left:auto;padding:12px 18px;background:var(--primary);border-radius:10px;color:white;border:none}
+.progress-wrapper{margin-top:12px}
+.progress{background:#eee;border-radius:12px;overflow:hidden;height:12px}
+.progress-bar{height:100%;background:linear-gradient(90deg,var(--primary),#6d28d9)}
+.progress-info{font-size:0.9rem;margin-top:6px;color:var(--muted)}
+
+/* toasts */
+.toasts{position:fixed;right:18px;bottom:18px;display:flex;flex-direction:column;gap:8px;z-index:2000}
+.toast{background:#111;color:white;padding:10px 14px;border-radius:10px;box-shadow:var(--shadow);opacity:0.98}
+.toast.success{background:var(--success)}
+.toast.error{background:var(--danger)}
+
+/* modal */
+.modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.32);z-index:3000}
+.modal-content{background:var(--card);padding:16px;border-radius:10px;min-width:320px}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+
+/* dark theme */
+body.dark{background:#0b1020;color:#e6eef8}
+body.dark .upload-box{background:#0f1724}
+body.dark .file-item{background:#0b1220}
+body.dark .toasts .toast{color:#111}
+
+@media(max-width:600px){
+  .zip-config{flex-direction:column;align-items:stretch}
+  .uploader-actions{flex-wrap:wrap}
+}
